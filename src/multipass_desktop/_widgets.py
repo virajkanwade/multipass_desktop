@@ -53,11 +53,19 @@ class InstanceInfoFrame(tk.Frame):
 
         self.multipass_client = multipass_client
 
+    def load_instance_info(self, instance_name):
+        instance_info = self.multipass_client.instance_info(instance_name)
+
 
 class ListVMInstance(tk.Frame):
     def __init__(self, master, instance, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
+        self._create_layout(instance)
+
+        self.bind("<Button-1>", self._on_click)
+
+    def _create_layout(self, instance):
         self.instance_name = tk.Label(
             self,
             text=instance['name'],
@@ -73,3 +81,10 @@ class ListVMInstance(tk.Frame):
 
         self.instance_release = tk.Label(self, text=instance['release'])
         self.instance_release.pack(anchor=tk.NW, fill=tk.Y, expand=True)
+
+    def _on_click(self, event):
+        instance_name = event.widget.instance_name.cget('text')
+
+        instance_info_frame = event.widget.master.master.master.master.children['!instanceinfoframe']
+
+        instance_info_frame.load_instance_info(instance_name)

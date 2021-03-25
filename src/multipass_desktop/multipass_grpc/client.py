@@ -39,3 +39,14 @@ class MutlipassGRpcClient():
                 })
 
         return _instances
+
+    def instance_info(self, instance_name):
+        info_req = multipass_pb2.InfoRequest(
+            instance_names=multipass_pb2.InstanceNames(
+                instance_name=[instance_name, ]
+            )
+        )
+        resp = self.stub.info(info_req)
+
+        for r in resp:
+            print(r)
