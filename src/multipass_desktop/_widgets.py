@@ -247,7 +247,7 @@ class VMInstanceInfo(tk.Frame):
             status_lbl.grid(row=row, column=0, ipadx="10", sticky=tk.E)
 
             self.status_var = tk.StringVar()
-            self.name_var.set(instance_info['status'])
+            self.status_var.set(instance_info['status'])
 
             status_field = tk.Entry(frame, textvariable=self.status_var, width=5)
             status_field.grid(row=row, column=1, ipadx="100", sticky=tk.W)
