@@ -1,5 +1,6 @@
 import configparser
 import grpc
+import json
 
 from . import multipass_pb2
 from . import multipass_pb2_grpc
@@ -15,6 +16,7 @@ class MutlipassGRpcClient():
 
         grpc_server = config['multipass']['grpc_server']
         grpc_cert = config['multipass']['grpc_cert']
+        self.instances_info_fname = config['multipass']['instances_info']
 
         with open(grpc_cert, 'rb') as fp:
             creds = grpc.ssl_channel_credentials(fp.read())
@@ -41,12 +43,63 @@ class MutlipassGRpcClient():
         return _instances
 
     def instance_info(self, instance_name):
+        _instance_info = {'name': instance_name}
+
+        static_info = {}
+        with open(self.instances_info_fname) as fp:
+            static_info = json.load(fp).get(instance_name)
+
+        _instance_info['deleted'] = static_info['deleted']
+        _instance_info['cpu'] = static_info['num_cores']
+        _instance_info['mac_addr'] = static_info['mac_addr']
+        _instance_info['memory'] = static_info['mem_size']
+        _instance_info['disk'] = static_info['disk_space']
+
         info_req = multipass_pb2.InfoRequest(
             instance_names=multipass_pb2.InstanceNames(
                 instance_name=[instance_name, ]
             )
         )
         resp = self.stub.info(info_req)
+
+        for r in resp:
+            for i in r.info:
+                print('current_release', i.current_release)
+                print('disk_total', i.disk_total)
+                print('disk_usage', i.disk_usage)
+                print('memory_total', i.memory_total)
+                print('memory_usage', i.memory_usage)
+                print('mount_info', i.mount_info)
+                _instance_info['release'] = i.image_release
+                _instance_info['status'] = INSTANCE_STATUS[i.instance_status.status]
+                _instance_info['ipv4'] = i.ipv4
+                _instance_info['ipv6'] = i.ipv6
+                _instance_info['load'] = i.load
+
+        return _instance_info
+
+    def start_instance(self, instance_name):
+        print('Starting', instance_name)
+        start_req = multipass_pb2.StartRequest(
+            instance_names=multipass_pb2.InstanceNames(
+                instance_name=[instance_name, ]
+            )
+        )
+
+        resp = self.stub.start(start_req)
+
+        for r in resp:
+            print(r)
+
+    def stop_instance(self, instance_name):
+        print('Stopping', instance_name)
+        stop_req = multipass_pb2.StopRequest(
+            instance_names=multipass_pb2.InstanceNames(
+                instance_name=[instance_name, ]
+            )
+        )
+
+        resp = self.stub.stop(stop_req)
 
         for r in resp:
             print(r)
